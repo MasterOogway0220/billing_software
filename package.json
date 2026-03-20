@@ -2,10 +2,10 @@
   "name": "billing-app",
   "private": true,
   "scripts": {
-    "build": "npm run build -w apps/web",
-    "dev": "npm run dev -w apps/web",
-    "lint": "npm run lint -w apps/web",
-    "check-types": "npm run check-types -w apps/web",
+    "build": "npm run build -w web",
+    "dev": "npm run dev -w web",
+    "lint": "npm run lint -w web",
+    "check-types": "npm run check-types -w web",
     "postinstall": "prisma generate --schema=packages/db/prisma/schema.prisma"
   },
   "devDependencies": {
