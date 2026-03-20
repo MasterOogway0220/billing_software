@@ -4,6 +4,8 @@ import { formatCurrency } from "../../../lib/utils";
 import Link from "next/link";
 import { FileText, TrendingUp, AlertCircle, CheckCircle, PlusCircle, Users, CreditCard } from "lucide-react";
 import type { Metadata } from "next";
+import { RevenueChart } from "../../../components/dashboard/RevenueChart";
+import type { RevenueChartData } from "../../../components/dashboard/RevenueChart";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -11,12 +13,17 @@ async function getDashboardData(businessId: string) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  // Six months ago (start of that month)
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
   const [
     totalOutstanding,
     totalPaidThisMonth,
     overdueCount,
     recentInvoices,
     topClients,
+    rawPayments,
+    rawInvoices,
   ] = await Promise.all([
     prisma.invoice.aggregate({
       where: { businessId, amountDue: { gt: 0 }, status: { notIn: ["VOID", "CANCELLED", "DRAFT"] } },
@@ -42,9 +49,61 @@ async function getDashboardData(businessId: string) {
       orderBy: { _sum: { grandTotal: "desc" } },
       take: 5,
     }),
+    // Raw payments for the last 6 months
+    prisma.payment.findMany({
+      where: { businessId, paymentDate: { gte: sixMonthsAgo } },
+      select: { paymentDate: true, amount: true },
+    }),
+    // Raw invoices issued in the last 6 months (non-draft)
+    prisma.invoice.findMany({
+      where: {
+        businessId,
+        invoiceDate: { gte: sixMonthsAgo },
+        status: { notIn: ["DRAFT", "VOID", "CANCELLED"] },
+      },
+      select: { invoiceDate: true, grandTotal: true },
+    }),
   ]);
 
-  return { totalOutstanding, totalPaidThisMonth, overdueCount, recentInvoices, topClients };
+  // Build ordered list of the last 6 calendar months
+  const monthKeys: string[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
+    monthKeys.push(key);
+  }
+
+  const paidByMonth: Record<string, number> = {};
+  const revenueByMonth: Record<string, number> = {};
+
+  for (const key of monthKeys) {
+    paidByMonth[key] = 0;
+    revenueByMonth[key] = 0;
+  }
+
+  for (const p of rawPayments) {
+    const d = p.paymentDate;
+    const key = `${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
+    if (key in paidByMonth) {
+      paidByMonth[key] = (paidByMonth[key] ?? 0) + Number(p.amount);
+    }
+  }
+
+  for (const inv of rawInvoices) {
+    const d = inv.invoiceDate;
+    const key = `${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
+    if (key in revenueByMonth) {
+      revenueByMonth[key] = (revenueByMonth[key] ?? 0) + Number(inv.grandTotal);
+    }
+  }
+
+  const chartData: RevenueChartData[] = monthKeys.map((month) => ({
+    month,
+    revenue: revenueByMonth[month] ?? 0,
+    paid: paidByMonth[month] ?? 0,
+  }));
+
+  return { totalOutstanding, totalPaidThisMonth, overdueCount, recentInvoices, topClients, chartData };
 }
 
 const statusStyles: Record<string, string> = {
@@ -60,7 +119,7 @@ const statusStyles: Record<string, string> = {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const { totalOutstanding, totalPaidThisMonth, overdueCount, recentInvoices } =
+  const { totalOutstanding, totalPaidThisMonth, overdueCount, recentInvoices, chartData } =
     await getDashboardData(session!.user.businessId!);
 
   const outstanding = Number(totalOutstanding._sum.amountDue ?? 0);
@@ -96,6 +155,9 @@ export default async function DashboardPage() {
           bg="bg-purple-50"
         />
       </div>
+
+      {/* Monthly Revenue Chart */}
+      <RevenueChart data={chartData} />
 
       {/* Quick Actions */}
       <div>
