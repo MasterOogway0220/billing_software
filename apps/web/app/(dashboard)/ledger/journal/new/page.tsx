@@ -74,7 +74,8 @@ export default function NewJournalEntryPage() {
   function updateLine(index: number, field: keyof JournalLine, value: string) {
     setLines((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const line = updated[index];
+      if (line) updated[index] = { ...line, [field]: value };
       return updated;
     });
   }
