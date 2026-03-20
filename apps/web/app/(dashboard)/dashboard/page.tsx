@@ -161,7 +161,7 @@ export default async function DashboardPage() {
           label="Total Outstanding"
           value={formatCurrency(outstanding)}
           icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-          iconBg="bg-gradient-to-br from-blue-50 to-blue-100"
+          iconBg="bg-blue-50"
           trend="+12%"
           trendColor="text-blue-600 bg-blue-50"
         />
@@ -169,15 +169,15 @@ export default async function DashboardPage() {
           label="Paid This Month"
           value={formatCurrency(paidThisMonth)}
           icon={<CheckCircle className="w-5 h-5 text-emerald-600" />}
-          iconBg="bg-gradient-to-br from-emerald-50 to-emerald-100"
+          iconBg="bg-emerald-50"
           trend="+8%"
           trendColor="text-emerald-600 bg-emerald-50"
         />
         <KpiCard
           label="Overdue Invoices"
           value={String(overdueCount)}
-          icon={<AlertCircle className="w-5 h-5 text-red-600" />}
-          iconBg="bg-gradient-to-br from-red-50 to-red-100"
+          icon={<AlertCircle className="w-5 h-5 text-red-500" />}
+          iconBg="bg-red-50"
           trend={overdueCount > 0 ? "Needs attention" : "All clear"}
           trendColor={overdueCount > 0 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50"}
           highlight={overdueCount > 0}
@@ -186,7 +186,7 @@ export default async function DashboardPage() {
           label="Total Invoices"
           value={String(totalInvoiceCount)}
           icon={<FileText className="w-5 h-5 text-violet-600" />}
-          iconBg="bg-gradient-to-br from-violet-50 to-violet-100"
+          iconBg="bg-violet-50"
           trend="All time"
           trendColor="text-violet-600 bg-violet-50"
         />
@@ -197,7 +197,7 @@ export default async function DashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Quick Actions</h2>
+        <h2 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <QuickAction
             href="/invoices/new"
@@ -224,21 +224,21 @@ export default async function DashboardPage() {
       {/* Recent Invoices */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Recent Invoices</h2>
-          <Link href="/invoices" className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+          <h2 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Recent Invoices</h2>
+          <Link href="/invoices" className="text-[13px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
             View all <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Invoice #</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Client</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500 hidden sm:table-cell">Date</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500">Total</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500 hidden md:table-cell">Amount Due</th>
-                <th className="text-center px-4 py-3 font-medium text-slate-500">Status</th>
+              <tr className="border-b border-slate-100 bg-slate-50/80">
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Invoice #</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Client</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide hidden sm:table-cell">Date</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide hidden md:table-cell">Due</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -375,13 +375,13 @@ function KpiCard({
   highlight?: boolean;
 }) {
   return (
-    <div className={`bg-white rounded-xl border ${highlight ? "border-red-200" : "border-slate-200"} p-5`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-10 h-10 ${iconBg} rounded-xl flex items-center justify-center`}>{icon}</div>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${trendColor}`}>{trend}</span>
+    <div className={`bg-white rounded-xl border ${highlight ? "border-red-100" : "border-slate-200"} p-5 hover:shadow-sm transition-shadow`}>
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-9 h-9 ${iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>{icon}</div>
+        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${trendColor}`}>{trend}</span>
       </div>
-      <p className={`text-2xl font-bold ${highlight ? "text-red-600" : "text-slate-900"} mb-1`}>{value}</p>
-      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className={`text-[22px] font-bold tracking-tight ${highlight ? "text-red-600" : "text-slate-900"} mb-0.5`}>{value}</p>
+      <p className="text-[12px] font-medium text-slate-500">{label}</p>
     </div>
   );
 }
@@ -402,20 +402,20 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-4 px-5 py-4 rounded-xl border font-medium transition-colors group ${
+      className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl border font-medium transition-all duration-150 group ${
         primary
-          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700"
-          : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
+          : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:shadow-sm"
       }`}
     >
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
         primary ? "bg-white/20" : "bg-slate-100 group-hover:bg-slate-200"
       } transition-colors`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold leading-snug">{label}</p>
-        <p className={`text-xs mt-0.5 ${primary ? "text-blue-100" : "text-slate-500"}`}>{description}</p>
+        <p className="text-[13px] font-semibold leading-snug">{label}</p>
+        <p className={`text-[11px] mt-0.5 ${primary ? "text-blue-100" : "text-slate-500"}`}>{description}</p>
       </div>
     </Link>
   );

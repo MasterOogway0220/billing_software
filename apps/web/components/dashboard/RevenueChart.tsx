@@ -29,10 +29,13 @@ export function RevenueChart({ data }: { data: RevenueChartData[] }) {
   if (data.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="font-semibold text-slate-800 mb-4">
-          Monthly Revenue – Last 6 Months
-        </h2>
-        <p className="py-12 text-center text-slate-400 text-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-[13px] font-semibold text-slate-800">Monthly Revenue</h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">Last 6 months</p>
+          </div>
+        </div>
+        <p className="py-12 text-center text-slate-400 text-[13px]">
           No data yet. Create some invoices and record payments to see the chart.
         </p>
       </div>
@@ -41,9 +44,12 @@ export function RevenueChart({ data }: { data: RevenueChartData[] }) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h2 className="font-semibold text-slate-800 mb-4">
-        Monthly Revenue – Last 6 Months
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-[13px] font-semibold text-slate-800">Monthly Revenue</h2>
+          <p className="text-[11px] text-slate-400 mt-0.5">Last 6 months</p>
+        </div>
+      </div>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart

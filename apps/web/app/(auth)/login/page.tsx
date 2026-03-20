@@ -63,9 +63,9 @@ function LoginForm() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h1>
-        <p className="text-slate-500 text-sm mt-1">Sign in to your BillFlow account</p>
+      <div className="mb-7">
+        <h1 className="text-[24px] font-bold text-slate-900 tracking-tight">Welcome back</h1>
+        <p className="text-slate-400 text-[13px] mt-1">Sign in to your BillFlow account</p>
       </div>
 
       {successMsg && (
@@ -155,7 +155,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm shadow-blue-200"
+          className="w-full py-2.5 px-4 bg-blue-600 text-white font-semibold text-[14px] rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm shadow-blue-200 mt-1"
         >
           {loading ? (
             <>

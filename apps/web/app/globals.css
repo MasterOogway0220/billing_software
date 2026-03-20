@@ -1,17 +1,47 @@
 @import "tailwindcss";
 
 :root {
+  /* Brand */
   --primary: #2563eb;
+  --primary-hover: #1d4ed8;
   --primary-foreground: #ffffff;
+  --primary-light: #eff6ff;
+  --primary-muted: #dbeafe;
+
+  /* CTA accent */
+  --cta: #f97316;
+  --cta-hover: #ea6c00;
+
+  /* Status */
   --success: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;
-  --background: #f8fafc;
+
+  /* Surface */
+  --background: #f5f6fa;
   --foreground: #0f172a;
   --muted: #64748b;
+  --muted-foreground: #94a3b8;
   --border: #e2e8f0;
+  --border-light: #f1f5f9;
   --card: #ffffff;
-  --sidebar-width: 240px;
+
+  /* Sidebar */
+  --sidebar-width: 232px;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #eaecf0;
+  --sidebar-active-bg: #eff6ff;
+  --sidebar-active-text: #1d4ed8;
+  --sidebar-active-border: #2563eb;
+
+  /* Topbar */
+  --topbar-height: 60px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 }
 
 * {
@@ -20,19 +50,44 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   max-width: 100vw;
   overflow-x: hidden;
 }
 
 body {
-  font-family: Inter, system-ui, sans-serif;
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 100px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }

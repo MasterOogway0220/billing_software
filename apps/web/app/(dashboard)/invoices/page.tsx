@@ -139,14 +139,14 @@ export default async function InvoicesPage({
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Invoices</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Invoices</h1>
+          <p className="text-[12px] text-slate-400 mt-0.5">
             Manage tax invoices and track collections
           </p>
         </div>
         <Link
           href="/invoices/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-lg transition-colors shadow-sm shadow-blue-200"
         >
           + New Invoice
         </Link>
@@ -154,32 +154,32 @@ export default async function InvoicesPage({
 
       {/* Summary stat bar */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-shadow">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
             Total Outstanding
           </p>
-          <p className="mt-1 text-2xl font-bold text-orange-600">
+          <p className="mt-1.5 text-[20px] font-bold tracking-tight text-orange-600">
             {formatCurrency(totalOutstanding, defaultCurrency)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-shadow">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
             This Month
           </p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">
+          <p className="mt-1.5 text-[20px] font-bold tracking-tight text-slate-900">
             {formatCurrency(totalThisMonth, defaultCurrency)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-sm transition-shadow">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
             Overdue
           </p>
-          <p className="mt-1 text-2xl font-bold text-red-600">{overdueCount}</p>
+          <p className="mt-1.5 text-[20px] font-bold tracking-tight text-red-600">{overdueCount}</p>
         </div>
       </div>
 
       {/* Filter pill tabs */}
-      <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 w-fit">
+      <div className="flex gap-0.5 bg-slate-100 border border-slate-200 rounded-lg p-0.5 w-fit">
         {FILTER_TABS.map(({ label, value }) => {
           const count =
             value === ""
@@ -190,18 +190,18 @@ export default async function InvoicesPage({
             <Link
               key={value}
               href={value ? `/invoices?status=${value}` : "/invoices"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-white text-slate-800 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               {label}
               <span
-                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold ${
+                className={`inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1.5 rounded-full text-[10px] font-semibold ${
                   isActive
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-100 text-slate-500"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-200 text-slate-500"
                 }`}
               >
                 {count}
@@ -239,29 +239,29 @@ export default async function InvoicesPage({
           <>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">
+                <tr className="border-b border-slate-100 bg-slate-50/80">
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Invoice #
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Client
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Date
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-500">
+                  <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Due Date
                   </th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-500">
+                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Amount
                   </th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-500">
+                  <th className="text-right px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Due
                   </th>
-                  <th className="text-center px-4 py-3 font-medium text-slate-500">
+                  <th className="text-center px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="text-center px-4 py-3 font-medium text-slate-500">
+                  <th className="text-center px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
