@@ -41,11 +41,52 @@ type CashFlowData = {
 
 type TabKey = "outstanding" | "aging" | "pl" | "cashflow";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "outstanding", label: "Outstanding" },
-  { key: "aging", label: "Aging" },
-  { key: "pl", label: "P&L" },
-  { key: "cashflow", label: "Cash Flow" },
+const REPORT_CARDS: {
+  key: TabKey;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}[] = [
+  {
+    key: "outstanding",
+    label: "Outstanding",
+    description: "Unpaid invoices grouped by age",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    key: "pl",
+    label: "Profit & Loss",
+    description: "Revenue vs expenses over a period",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+      </svg>
+    ),
+  },
+  {
+    key: "aging",
+    label: "AR Aging",
+    description: "Detailed view of overdue invoices",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+      </svg>
+    ),
+  },
+  {
+    key: "cashflow",
+    label: "Cash Flow",
+    description: "Monthly receipts over the last 6 months",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+      </svg>
+    ),
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -107,30 +148,36 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">Reports</h1>
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Reports & Analytics</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Track outstanding balances, receivables, and financial performance
+        </p>
+      </div>
 
       {/* Top KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           label="Total Outstanding"
-          value={outstandingLoading ? "…" : formatCurrency(totalOutstanding)}
+          value={outstandingLoading ? null : formatCurrency(totalOutstanding)}
           color="blue"
         />
         <StatCard
           label="Overdue Amount"
-          value={outstandingLoading ? "…" : formatCurrency(overdueTotal)}
+          value={outstandingLoading ? null : formatCurrency(overdueTotal)}
           color="red"
           highlight={overdueTotal > 0}
         />
         <StatCard
           label="Overdue Invoices"
-          value={outstandingLoading ? "…" : String(overdueCount)}
+          value={outstandingLoading ? null : String(overdueCount)}
           color="orange"
           highlight={overdueCount > 0}
         />
         <StatCard
           label="Open Invoices"
-          value={outstandingLoading ? "…" : String(totalInvoices)}
+          value={outstandingLoading ? null : String(totalInvoices)}
           color="purple"
         />
       </div>
@@ -139,21 +186,44 @@ export default function ReportsPage() {
         <p className="text-sm text-red-500">{outstandingError}</p>
       )}
 
-      {/* Tab Bar */}
-      <div className="flex gap-1 bg-white border border-slate-200 rounded-lg p-1 w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.key
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Report Type Selector */}
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+          Select Report
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {REPORT_CARDS.map((card) => (
+            <button
+              key={card.key}
+              onClick={() => setActiveTab(card.key)}
+              className={`text-left p-4 rounded-xl border transition-all ${
+                activeTab === card.key
+                  ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500/30"
+                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${
+                  activeTab === card.key
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {card.icon}
+              </div>
+              <p
+                className={`text-sm font-semibold ${
+                  activeTab === card.key ? "text-blue-700" : "text-slate-800"
+                }`}
+              >
+                {card.label}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                {card.description}
+              </p>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -188,7 +258,7 @@ function OutstandingTab({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Buckets */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
         {data.buckets.map((bucket) => (
@@ -208,14 +278,15 @@ function OutstandingTab({
       {/* Top Clients */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">Top 5 Clients by Outstanding</h2>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Clients</p>
+          <h2 className="font-semibold text-slate-800">Top 5 by Outstanding Balance</h2>
         </div>
         {data.topClients.length === 0 ? (
-          <p className="px-5 py-8 text-center text-slate-400 text-sm">No outstanding invoices.</p>
+          <p className="px-5 py-10 text-center text-slate-400 text-sm">No outstanding invoices.</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {data.topClients.map((client, idx) => (
-              <li key={idx} className="flex items-center justify-between px-5 py-3">
+              <li key={idx} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center">
                     {idx + 1}
@@ -269,34 +340,35 @@ function AgingTab() {
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div className="px-5 py-4 border-b border-slate-100">
-        <h2 className="font-semibold text-slate-800">AR Aging Detail</h2>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Detail</p>
+        <h2 className="font-semibold text-slate-800">AR Aging Report</h2>
         <p className="text-xs text-slate-500 mt-0.5">All invoices with outstanding balance</p>
       </div>
       {!data || data.length === 0 ? (
-        <p className="px-5 py-8 text-center text-slate-400 text-sm">No outstanding invoices.</p>
+        <p className="px-5 py-10 text-center text-slate-400 text-sm">No outstanding invoices.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Client</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Invoice #</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Invoice Date</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-500">Due Date</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500">Days Overdue</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500">Amount Due</th>
+                <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Client</th>
+                <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Invoice #</th>
+                <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Invoice Date</th>
+                <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Due Date</th>
+                <th className="text-right px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Days Overdue</th>
+                <th className="text-right px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Amount Due</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {data.map((row, idx) => (
                 <tr key={idx} className={`transition-colors ${rowColor(row.daysOverdue)}`}>
-                  <td className="px-4 py-3 font-medium text-slate-800">{row.clientName}</td>
-                  <td className="px-4 py-3 font-mono text-slate-700">{row.invoiceNumber}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(row.invoiceDate)}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-5 py-3.5 font-medium text-slate-800">{row.clientName}</td>
+                  <td className="px-5 py-3.5 font-mono text-slate-700">{row.invoiceNumber}</td>
+                  <td className="px-5 py-3.5 text-slate-600">{formatDate(row.invoiceDate)}</td>
+                  <td className="px-5 py-3.5 text-slate-600">
                     {row.dueDate ? formatDate(row.dueDate) : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-5 py-3.5 text-right">
                     {row.daysOverdue === 0 ? (
                       <span className="text-slate-400">Current</span>
                     ) : (
@@ -313,7 +385,7 @@ function AgingTab() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                  <td className="px-5 py-3.5 text-right font-semibold text-slate-900">
                     {formatCurrency(row.amountDue)}
                   </td>
                 </tr>
@@ -358,26 +430,27 @@ function PLTab() {
       : "0.0";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Date range selector */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Date Range</p>
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">From</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">From</label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+              className="px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-colors"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">To</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">To</label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="px-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+              className="px-3 py-2.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-colors"
             />
           </div>
         </div>
@@ -442,9 +515,10 @@ function CashFlowTab() {
   if (!data) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Bar Chart */}
       <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Trend</p>
         <h2 className="font-semibold text-slate-800 mb-4">Monthly Receipts – Last 6 Months</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -487,20 +561,21 @@ function CashFlowTab() {
       {/* Monthly Breakdown Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">Monthly Breakdown</h2>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Breakdown</p>
+          <h2 className="font-semibold text-slate-800">Monthly Summary</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
-              <th className="text-left px-4 py-3 font-medium text-slate-500">Month</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-500">Amount Received</th>
+              <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Month</th>
+              <th className="text-right px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Amount Received</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {data.months.map((row) => (
               <tr key={row.month} className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3 text-slate-700">{row.month}</td>
-                <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                <td className="px-5 py-3.5 text-slate-700">{row.month}</td>
+                <td className="px-5 py-3.5 text-right font-semibold text-slate-900">
                   {formatCurrency(row.received)}
                 </td>
               </tr>
@@ -508,8 +583,8 @@ function CashFlowTab() {
           </tbody>
           <tfoot>
             <tr className="border-t border-slate-200 bg-slate-50">
-              <td className="px-4 py-3 font-semibold text-slate-700">Total</td>
-              <td className="px-4 py-3 text-right font-bold text-slate-900">
+              <td className="px-5 py-3.5 font-semibold text-slate-700">Total</td>
+              <td className="px-5 py-3.5 text-right font-bold text-slate-900">
                 {formatCurrency(data.months.reduce((s, r) => s + r.received, 0))}
               </td>
             </tr>
@@ -537,7 +612,7 @@ function StatCard({
   highlight = false,
 }: {
   label: string;
-  value: string;
+  value: string | null;
   color: string;
   highlight?: boolean;
 }) {
@@ -547,26 +622,52 @@ function StatCard({
       className={`rounded-xl border p-5 ${highlight ? "border-red-300 bg-red-50" : `${c.card} bg-white`}`}
     >
       <p className="text-xs font-medium text-slate-500 mb-2">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? "text-red-700" : c.value}`}>{value}</p>
+      {value === null ? (
+        <div className="flex items-center gap-2 mt-1">
+          <svg
+            className="w-4 h-4 animate-spin text-slate-300"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span className="text-slate-300 text-2xl font-bold">—</span>
+        </div>
+      ) : (
+        <p className={`text-2xl font-bold ${highlight ? "text-red-700" : c.value}`}>{value}</p>
+      )}
     </div>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="py-16 text-center text-slate-400 text-sm">Loading…</div>
+    <div className="py-16 flex items-center justify-center gap-3 text-slate-400">
+      <svg
+        className="w-5 h-5 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+      <span className="text-sm">Loading report…</span>
+    </div>
   );
 }
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="py-8 text-center space-y-2">
+    <div className="py-10 text-center space-y-3">
       <p className="text-sm text-red-500">{message}</p>
       <button
         onClick={onRetry}
-        className="text-xs text-blue-600 hover:underline"
+        className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline"
       >
-        Retry
+        Try again
       </button>
     </div>
   );

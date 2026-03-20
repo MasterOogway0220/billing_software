@@ -60,23 +60,31 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">Settings</h1>
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Manage your business profile and preferences
+        </p>
+      </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-white border border-slate-200 rounded-lg p-1 w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.key
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Horizontal tab nav with bottom border indicator */}
+      <div className="border-b border-slate-200">
+        <nav className="flex gap-0 -mb-px">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-5 py-3 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {activeTab === "profile" && <BusinessProfileTab />}
@@ -152,12 +160,34 @@ function BusinessProfileTab() {
 
   if (loading) {
     return (
-      <div className="py-16 text-center text-slate-400 text-sm">Loading…</div>
+      <div className="py-16 flex items-center justify-center gap-3 text-slate-400">
+        <svg
+          className="w-5 h-5 animate-spin"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <span className="text-sm">Loading profile…</span>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Basic Info */}
       <Section title="Basic Information">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -305,15 +335,44 @@ function BusinessProfileTab() {
       </Section>
 
       {/* Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 pt-1">
         <button
           type="submit"
           disabled={saving}
-          className="px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 transition-colors"
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving && (
+            <svg
+              className="w-4 h-4 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+          )}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
-        {saved && <span className="text-sm text-green-600 font-medium">Saved successfully.</span>}
+        {saved && (
+          <span className="text-sm text-green-600 font-medium flex items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Saved successfully
+          </span>
+        )}
         {error && <span className="text-sm text-red-600">{error}</span>}
       </div>
     </form>
@@ -339,7 +398,31 @@ function InvoiceNumberingTab() {
   }, []);
 
   if (loading) {
-    return <div className="py-16 text-center text-slate-400 text-sm">Loading…</div>;
+    return (
+      <div className="py-16 flex items-center justify-center gap-3 text-slate-400">
+        <svg
+          className="w-5 h-5 animate-spin"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <span className="text-sm">Loading…</span>
+      </div>
+    );
   }
 
   if (error) {
@@ -348,7 +431,8 @@ function InvoiceNumberingTab() {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100">
+      <div className="px-6 py-5 border-b border-slate-100">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Configuration</p>
         <h2 className="font-semibold text-slate-800">Document Number Sequences</h2>
         <p className="text-sm text-slate-500 mt-0.5">
           Configure prefix, separator, and counter for each document type.
@@ -357,11 +441,11 @@ function InvoiceNumberingTab() {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50">
-            <th className="text-left px-4 py-3 font-medium text-slate-500">Document Type</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-500">Prefix</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-500">Separator</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-500">Current Counter</th>
-            <th className="text-center px-4 py-3 font-medium text-slate-500">Action</th>
+            <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Document Type</th>
+            <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Prefix</th>
+            <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Separator</th>
+            <th className="text-right px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Counter</th>
+            <th className="text-center px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -369,17 +453,17 @@ function InvoiceNumberingTab() {
             const cfg = configs.find((c) => c.documentType === dt.value);
             return (
               <tr key={dt.value} className="hover:bg-slate-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-slate-800">{dt.label}</td>
-                <td className="px-4 py-3 font-mono text-slate-600">
+                <td className="px-5 py-3.5 font-medium text-slate-800">{dt.label}</td>
+                <td className="px-5 py-3.5 font-mono text-slate-600">
                   {cfg?.prefix ?? <span className="text-slate-300">—</span>}
                 </td>
-                <td className="px-4 py-3 font-mono text-slate-600">
+                <td className="px-5 py-3.5 font-mono text-slate-600">
                   {cfg?.separator ?? "-"}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-slate-600">
+                <td className="px-5 py-3.5 text-right font-mono text-slate-600">
                   {cfg ? String(cfg.currentCounter).padStart(cfg.paddingDigits, "0") : "—"}
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-5 py-3.5 text-center">
                   <button
                     disabled
                     className="px-3 py-1 text-xs font-medium border border-slate-200 rounded-md text-slate-400 cursor-not-allowed"
@@ -401,8 +485,8 @@ function InvoiceNumberingTab() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">{title}</h2>
+    <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">{title}</p>
       {children}
     </div>
   );
@@ -419,7 +503,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-slate-600 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
       {children}
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
@@ -427,9 +511,9 @@ function Field({
 }
 
 function inputCls(hasError: boolean) {
-  return `w-full px-3 py-2 text-sm border rounded-lg outline-none transition-colors ${
+  return `w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-colors ${
     hasError
-      ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-200"
-      : "border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+      ? "border-red-300 focus:ring-red-500/20 focus:border-red-500"
+      : "border-slate-200 focus:ring-blue-500/30 focus:border-blue-500"
   }`;
 }
