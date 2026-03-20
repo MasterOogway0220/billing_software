@@ -12,7 +12,7 @@ const createAccountSchema = z.object({
   subGroup: z.string().optional(),
 });
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const session = await auth();
   if (!session?.user?.businessId) {
     return NextResponse.json(err("UNAUTHORIZED", "Unauthorized"), { status: 401 });

@@ -35,8 +35,8 @@ const EMPTY_LINE: JournalLine = {
   credit: "",
 };
 
-function todayString() {
-  return new Date().toISOString().split("T")[0];
+function todayString(): string {
+  return new Date().toISOString().split("T")[0] ?? "";
 }
 
 function parseAmount(val: string): number {

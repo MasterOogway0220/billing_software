@@ -266,4 +266,5 @@ export function useRecordPayment(props: RecordPaymentModalProps) {
   return { open, setOpen, modal };
 }
 
+export { RecordPaymentModal };
 export default RecordPaymentModal;
