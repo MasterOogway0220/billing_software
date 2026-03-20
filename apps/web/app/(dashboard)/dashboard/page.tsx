@@ -7,12 +7,13 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  PlusCircle,
+  Plus,
   Users,
   CreditCard,
   ArrowRight,
   Settings,
   Check,
+  ArrowUpRight,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { RevenueChart } from "../../../components/dashboard/RevenueChart";
@@ -23,8 +24,6 @@ export const metadata: Metadata = { title: "Dashboard" };
 async function getDashboardData(businessId: string) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  // Six months ago (start of that month)
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
   const [
@@ -45,9 +44,7 @@ async function getDashboardData(businessId: string) {
       where: { businessId, paymentDate: { gte: startOfMonth } },
       _sum: { amount: true },
     }),
-    prisma.invoice.count({
-      where: { businessId, status: "OVERDUE" },
-    }),
+    prisma.invoice.count({ where: { businessId, status: "OVERDUE" } }),
     prisma.invoice.findMany({
       where: { businessId },
       include: { client: { select: { displayName: true } } },
@@ -61,12 +58,10 @@ async function getDashboardData(businessId: string) {
       orderBy: { _sum: { grandTotal: "desc" } },
       take: 5,
     }),
-    // Raw payments for the last 6 months
     prisma.payment.findMany({
       where: { businessId, paymentDate: { gte: sixMonthsAgo } },
       select: { paymentDate: true, amount: true },
     }),
-    // Raw invoices issued in the last 6 months (non-draft)
     prisma.invoice.findMany({
       where: {
         businessId,
@@ -78,36 +73,22 @@ async function getDashboardData(businessId: string) {
     prisma.invoice.count({ where: { businessId } }),
   ]);
 
-  // Build ordered list of the last 6 calendar months
+  // Build 6-month chart data
   const monthKeys: string[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
-    monthKeys.push(key);
+    monthKeys.push(`${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`);
   }
-
-  const paidByMonth: Record<string, number> = {};
-  const revenueByMonth: Record<string, number> = {};
-
-  for (const key of monthKeys) {
-    paidByMonth[key] = 0;
-    revenueByMonth[key] = 0;
-  }
+  const paidByMonth: Record<string, number>    = Object.fromEntries(monthKeys.map((k) => [k, 0]));
+  const revenueByMonth: Record<string, number> = Object.fromEntries(monthKeys.map((k) => [k, 0]));
 
   for (const p of rawPayments) {
-    const d = p.paymentDate;
-    const key = `${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
-    if (key in paidByMonth) {
-      paidByMonth[key] = (paidByMonth[key] ?? 0) + Number(p.amount);
-    }
+    const key = `${p.paymentDate.toLocaleString("en-IN", { month: "short" })} ${p.paymentDate.getFullYear()}`;
+    if (key in paidByMonth) paidByMonth[key] = (paidByMonth[key] ?? 0) + Number(p.amount);
   }
-
   for (const inv of rawInvoices) {
-    const d = inv.invoiceDate;
-    const key = `${d.toLocaleString("en-IN", { month: "short" })} ${d.getFullYear()}`;
-    if (key in revenueByMonth) {
-      revenueByMonth[key] = (revenueByMonth[key] ?? 0) + Number(inv.grandTotal);
-    }
+    const key = `${inv.invoiceDate.toLocaleString("en-IN", { month: "short" })} ${inv.invoiceDate.getFullYear()}`;
+    if (key in revenueByMonth) revenueByMonth[key] = (revenueByMonth[key] ?? 0) + Number(inv.grandTotal);
   }
 
   const chartData: RevenueChartData[] = monthKeys.map((month) => ({
@@ -116,94 +97,81 @@ async function getDashboardData(businessId: string) {
     paid: paidByMonth[month] ?? 0,
   }));
 
-  return {
-    totalOutstanding,
-    totalPaidThisMonth,
-    overdueCount,
-    recentInvoices,
-    topClients,
-    chartData,
-    totalInvoiceCount,
-  };
+  return { totalOutstanding, totalPaidThisMonth, overdueCount, recentInvoices, topClients, chartData, totalInvoiceCount };
 }
 
 const statusConfig: Record<string, { classes: string; dot: string; label: string }> = {
-  DRAFT:         { classes: "bg-slate-100 text-slate-600",   dot: "bg-slate-400",   label: "Draft" },
-  SENT:          { classes: "bg-blue-100 text-blue-700",     dot: "bg-blue-500",    label: "Sent" },
-  VIEWED:        { classes: "bg-indigo-100 text-indigo-700", dot: "bg-indigo-500",  label: "Viewed" },
-  PARTIALLY_PAID:{ classes: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-500",  label: "Partial" },
-  PAID:          { classes: "bg-green-100 text-green-700",   dot: "bg-green-500",   label: "Paid" },
-  OVERDUE:       { classes: "bg-red-100 text-red-700",       dot: "bg-red-500",     label: "Overdue" },
-  CANCELLED:     { classes: "bg-gray-100 text-gray-500",     dot: "bg-gray-400",    label: "Cancelled" },
-  VOID:          { classes: "bg-gray-100 text-gray-400",     dot: "bg-gray-300",    label: "Void" },
+  DRAFT:          { classes: "bg-slate-100 text-slate-600",   dot: "bg-slate-400",   label: "Draft" },
+  SENT:           { classes: "bg-blue-100 text-blue-700",     dot: "bg-blue-500",    label: "Sent" },
+  VIEWED:         { classes: "bg-indigo-100 text-indigo-700", dot: "bg-indigo-500",  label: "Viewed" },
+  PARTIALLY_PAID: { classes: "bg-amber-100 text-amber-700",   dot: "bg-amber-500",   label: "Partial" },
+  PAID:           { classes: "bg-emerald-100 text-emerald-700",dot: "bg-emerald-500", label: "Paid" },
+  OVERDUE:        { classes: "bg-red-100 text-red-700",       dot: "bg-red-500",     label: "Overdue" },
+  CANCELLED:      { classes: "bg-gray-100 text-gray-500",     dot: "bg-gray-400",    label: "Cancelled" },
+  VOID:           { classes: "bg-gray-100 text-gray-400",     dot: "bg-gray-300",    label: "Void" },
 };
 
 export default async function DashboardPage() {
   const session = await auth();
-  const {
-    totalOutstanding,
-    totalPaidThisMonth,
-    overdueCount,
-    recentInvoices,
-    chartData,
-    totalInvoiceCount,
-  } = await getDashboardData(session!.user.businessId!);
+  const { totalOutstanding, totalPaidThisMonth, overdueCount, recentInvoices, chartData, totalInvoiceCount } =
+    await getDashboardData(session!.user.businessId!);
 
-  const outstanding = Number(totalOutstanding._sum.amountDue ?? 0);
-  const paidThisMonth = Number(totalPaidThisMonth._sum.amount ?? 0);
+  const outstanding   = Number(totalOutstanding._sum.amountDue ?? 0);
+  const paidThisMonth = Number(totalPaidThisMonth._sum.amount  ?? 0);
   const showGettingStarted = totalInvoiceCount === 0;
 
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="space-y-8">
+
+      {/* ── KPI Cards ─────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <KpiCard
           label="Total Outstanding"
           value={formatCurrency(outstanding)}
-          icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
+          icon={<TrendingUp className="w-6 h-6 text-blue-600" />}
           iconBg="bg-blue-50"
-          trend="+12%"
-          trendColor="text-blue-600 bg-blue-50"
+          badge="+12% vs last month"
+          badgeColor="text-blue-600"
         />
         <KpiCard
           label="Paid This Month"
           value={formatCurrency(paidThisMonth)}
-          icon={<CheckCircle className="w-5 h-5 text-emerald-600" />}
+          icon={<CheckCircle className="w-6 h-6 text-emerald-600" />}
           iconBg="bg-emerald-50"
-          trend="+8%"
-          trendColor="text-emerald-600 bg-emerald-50"
+          badge="+8% vs last month"
+          badgeColor="text-emerald-600"
         />
         <KpiCard
           label="Overdue Invoices"
           value={String(overdueCount)}
-          icon={<AlertCircle className="w-5 h-5 text-red-500" />}
+          icon={<AlertCircle className="w-6 h-6 text-red-500" />}
           iconBg="bg-red-50"
-          trend={overdueCount > 0 ? "Needs attention" : "All clear"}
-          trendColor={overdueCount > 0 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50"}
+          badge={overdueCount > 0 ? "Needs attention" : "All clear"}
+          badgeColor={overdueCount > 0 ? "text-red-600" : "text-emerald-600"}
           highlight={overdueCount > 0}
         />
         <KpiCard
           label="Total Invoices"
           value={String(totalInvoiceCount)}
-          icon={<FileText className="w-5 h-5 text-violet-600" />}
+          icon={<FileText className="w-6 h-6 text-violet-600" />}
           iconBg="bg-violet-50"
-          trend="All time"
-          trendColor="text-violet-600 bg-violet-50"
+          badge="All time"
+          badgeColor="text-violet-600"
         />
       </div>
 
-      {/* Monthly Revenue Chart */}
+      {/* ── Chart ─────────────────────────────────────── */}
       <RevenueChart data={chartData} />
 
-      {/* Quick Actions */}
+      {/* ── Quick Actions ─────────────────────────────── */}
       <div>
-        <h2 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <h2 className="text-base font-semibold text-slate-800 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <QuickAction
             href="/invoices/new"
-            icon={<PlusCircle className="w-5 h-5" />}
+            icon={<Plus className="w-5 h-5" />}
             label="New Invoice"
-            description="Create and send an invoice"
+            description="Create and send a GST invoice"
             primary
           />
           <QuickAction
@@ -221,66 +189,85 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent Invoices */}
+      {/* ── Recent Invoices ───────────────────────────── */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Recent Invoices</h2>
-          <Link href="/invoices" className="text-[13px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-            View all <ArrowRight className="w-3.5 h-3.5" />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-800">Recent Invoices</h2>
+          <Link
+            href="/invoices"
+            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            View all <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/80">
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Invoice #</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Client</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide hidden sm:table-cell">Date</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide hidden md:table-cell">Due</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Status</th>
+              <tr className="border-b border-slate-100 bg-slate-50">
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Invoice #</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Date</th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                <th className="text-right px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Due</th>
+                <th className="text-center px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {recentInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center">
-                    <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-slate-400 text-sm">No invoices yet.</p>
-                    <Link href="/invoices/new" className="text-blue-600 hover:underline text-sm font-medium mt-1 inline-block">
-                      Create your first invoice
-                    </Link>
+                  <td colSpan={6} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                        <FileText className="w-7 h-7 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">No invoices yet</p>
+                        <p className="text-sm text-slate-400 mt-1">Create your first invoice to get started.</p>
+                      </div>
+                      <Link
+                        href="/invoices/new"
+                        className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" /> New Invoice
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 recentInvoices.map((inv) => {
                   const cfg = statusConfig[inv.status] ?? statusConfig["DRAFT"]!;
                   return (
-                    <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <Link href={`/invoices/${inv.id}`} className="text-blue-600 font-medium hover:underline">
+                    <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors group">
+                      <td className="px-6 py-4">
+                        <Link
+                          href={`/invoices/${inv.id}`}
+                          className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                        >
                           {inv.invoiceNumber}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-slate-700">{inv.client?.displayName ?? "—"}</td>
-                      <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">
+                      <td className="px-6 py-4 text-sm text-slate-700 font-medium">
+                        {inv.client?.displayName ?? "—"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500 hidden sm:table-cell">
                         {new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(inv.invoiceDate)}
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-slate-800">
+                      <td className="px-6 py-4 text-sm text-right font-semibold text-slate-800">
                         {formatCurrency(Number(inv.grandTotal), inv.currency)}
                       </td>
-                      <td className="px-4 py-3 text-right hidden md:table-cell">
+                      <td className="px-6 py-4 text-sm text-right hidden md:table-cell">
                         {Number(inv.amountDue) > 0 ? (
-                          <span className="font-medium text-amber-700">
+                          <span className="font-semibold text-amber-600">
                             {formatCurrency(Number(inv.amountDue), inv.currency)}
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-slate-300">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.classes}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} flex-shrink-0`} />
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.classes}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} shrink-0`} />
                           {cfg.label}
                         </span>
                       </td>
@@ -293,62 +280,40 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Getting Started checklist — only shown when there are 0 invoices */}
+      {/* ── Getting Started ───────────────────────────── */}
       {showGettingStarted && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base font-bold text-slate-900 mb-0.5">Get started with BillFlow</h3>
-              <p className="text-sm text-slate-500 mb-5">Complete these steps to set up your account and send your first invoice.</p>
-              <div className="space-y-3">
-                {[
-                  {
-                    label: "Set up your business profile",
-                    desc: "Add your logo, address, and tax details",
-                    href: "/settings",
-                    icon: <Settings className="w-4 h-4 text-slate-500" />,
-                    done: false,
-                  },
-                  {
-                    label: "Add a client",
-                    desc: "Create a client profile before invoicing",
-                    href: "/clients/new",
-                    icon: <Users className="w-4 h-4 text-slate-500" />,
-                    done: false,
-                  },
-                  {
-                    label: "Create your first invoice",
-                    desc: "Send a professional GST-compliant invoice",
-                    href: "/invoices/new",
-                    icon: <FileText className="w-4 h-4 text-slate-500" />,
-                    done: false,
-                  },
-                ].map((step, i) => (
-                  <Link
-                    key={i}
-                    href={step.href}
-                    className="flex items-center gap-4 p-3.5 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/40 transition-colors group"
-                  >
-                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                      step.done
-                        ? "bg-emerald-500 border-emerald-500"
-                        : "border-slate-300 group-hover:border-blue-400"
-                    }`}>
-                      {step.done && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${step.done ? "text-slate-400 line-through" : "text-slate-800"}`}>
-                        {step.label}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5">{step.desc}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors flex-shrink-0" />
-                  </Link>
-                ))}
+        <div className="bg-white rounded-xl border border-slate-200 p-8">
+          <div className="max-w-lg">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-blue-600" />
               </div>
+              <h3 className="text-lg font-bold text-slate-900">Get started with BillFlow</h3>
+            </div>
+            <p className="text-sm text-slate-500 mb-6 ml-[52px]">
+              Complete these steps to set up your account and send your first invoice.
+            </p>
+            <div className="space-y-3 ml-[52px]">
+              {[
+                { label: "Set up your business profile", desc: "Add your logo, address, and GST details", href: "/settings", icon: <Settings className="w-4 h-4" /> },
+                { label: "Add your first client",        desc: "Create a client profile before invoicing",   href: "/clients/new", icon: <Users className="w-4 h-4" /> },
+                { label: "Create your first invoice",    desc: "Send a professional GST-compliant invoice",  href: "/invoices/new", icon: <FileText className="w-4 h-4" /> },
+              ].map((step, i) => (
+                <Link
+                  key={i}
+                  href={step.href}
+                  className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 transition-all group"
+                >
+                  <div className="w-8 h-8 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0 group-hover:border-blue-400 transition-colors text-slate-400 group-hover:text-blue-500">
+                    <Check className="w-4 h-4 opacity-0" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800">{step.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{step.desc}</p>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors shrink-0" />
+                </Link>
+              ))}
             </div>
           </div>
         </div>
@@ -357,65 +322,54 @@ export default async function DashboardPage() {
   );
 }
 
+/* ─── KPI Card ─────────────────────────────────────────────── */
 function KpiCard({
-  label,
-  value,
-  icon,
-  iconBg,
-  trend,
-  trendColor,
-  highlight = false,
+  label, value, icon, iconBg, badge, badgeColor, highlight = false,
 }: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  trend: string;
-  trendColor: string;
-  highlight?: boolean;
+  label: string; value: string; icon: React.ReactNode; iconBg: string;
+  badge: string; badgeColor: string; highlight?: boolean;
 }) {
   return (
-    <div className={`bg-white rounded-xl border ${highlight ? "border-red-100" : "border-slate-200"} p-5 hover:shadow-sm transition-shadow`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-9 h-9 ${iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>{icon}</div>
-        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${trendColor}`}>{trend}</span>
+    <div className={`bg-white rounded-xl border p-6 hover:shadow-md transition-shadow ${highlight ? "border-red-200" : "border-slate-200"}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className={`w-11 h-11 ${iconBg} rounded-xl flex items-center justify-center shrink-0`}>
+          {icon}
+        </div>
+        <span className={`text-xs font-semibold ${badgeColor}`}>{badge}</span>
       </div>
-      <p className={`text-[22px] font-bold tracking-tight ${highlight ? "text-red-600" : "text-slate-900"} mb-0.5`}>{value}</p>
-      <p className="text-[12px] font-medium text-slate-500">{label}</p>
+      <p className={`text-3xl font-bold tracking-tight ${highlight ? "text-red-600" : "text-slate-900"}`}>
+        {value}
+      </p>
+      <p className="text-sm text-slate-500 font-medium mt-1.5">{label}</p>
     </div>
   );
 }
 
+/* ─── Quick Action Card ────────────────────────────────────── */
 function QuickAction({
-  href,
-  icon,
-  label,
-  description,
-  primary = false,
+  href, icon, label, description, primary = false,
 }: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  primary?: boolean;
+  href: string; icon: React.ReactNode; label: string; description: string; primary?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl border font-medium transition-all duration-150 group ${
+      className={`flex items-center gap-4 px-5 py-4 rounded-xl border font-medium transition-all duration-150 group cursor-pointer ${
         primary
-          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200"
-          : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:shadow-sm"
+          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200/50"
+          : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:shadow-md"
       }`}
     >
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
         primary ? "bg-white/20" : "bg-slate-100 group-hover:bg-slate-200"
-      } transition-colors`}>
+      }`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[13px] font-semibold leading-snug">{label}</p>
-        <p className={`text-[11px] mt-0.5 ${primary ? "text-blue-100" : "text-slate-500"}`}>{description}</p>
+        <p className="text-sm font-bold">{label}</p>
+        <p className={`text-xs mt-0.5 font-normal ${primary ? "text-blue-100" : "text-slate-500"}`}>
+          {description}
+        </p>
       </div>
     </Link>
   );

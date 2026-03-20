@@ -11,25 +11,28 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session.user?.businessId) redirect("/onboarding");
 
   return (
-    <div className="flex h-screen" style={{ background: "var(--background)" }}>
-      {/* Desktop sidebar — hidden on mobile */}
-      <div className="hidden md:block" style={{ width: "var(--sidebar-width)", flexShrink: 0 }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: "var(--background)" }}>
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex shrink-0" style={{ width: "var(--sidebar-width)" }}>
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar (drawer + header bar) — hidden on desktop */}
+      {/* Mobile sidebar */}
       <MobileSidebar />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Desktop topbar */}
-        <div className="hidden md:block sticky top-0 z-20">
+      {/* Main area */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-screen overflow-hidden">
+        {/* Topbar — desktop only, sticky */}
+        <div className="hidden md:block shrink-0">
           <Topbar />
         </div>
-        {/* Spacer on mobile to account for fixed header bar */}
-        <div className="md:hidden" style={{ height: "var(--topbar-height)" }} />
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        {/* Mobile spacer */}
+        <div className="md:hidden shrink-0" style={{ height: "var(--topbar-height)" }} />
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-6 sm:px-8 py-8">
             {children}
           </div>
         </main>

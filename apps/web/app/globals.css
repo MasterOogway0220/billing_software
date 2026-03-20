@@ -18,7 +18,7 @@
   --danger: #dc2626;
 
   /* Surface */
-  --background: #f5f6fa;
+  --background: #f1f5f9;
   --foreground: #0f172a;
   --muted: #64748b;
   --muted-foreground: #94a3b8;
@@ -27,15 +27,12 @@
   --card: #ffffff;
 
   /* Sidebar */
-  --sidebar-width: 232px;
+  --sidebar-width: 256px;
   --sidebar-bg: #ffffff;
-  --sidebar-border: #eaecf0;
-  --sidebar-active-bg: #eff6ff;
-  --sidebar-active-text: #1d4ed8;
-  --sidebar-active-border: #2563eb;
+  --sidebar-border: #e8ecf0;
 
   /* Topbar */
-  --topbar-height: 60px;
+  --topbar-height: 64px;
 
   /* Radius */
   --radius-sm: 6px;
@@ -61,7 +58,7 @@ body {
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -72,8 +69,8 @@ a {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
