@@ -34,6 +34,23 @@ export function InvoiceDetailActions({
   const [loading, setLoading] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
+  async function handleShare() {
+    setLoading("share");
+    try {
+      const res = await api.post<{ shareToken: string }>(
+        `/api/v1/invoices/${invoiceId}/share`,
+        {}
+      );
+      const shareUrl = `${window.location.origin}/invoice/${res.data.shareToken}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Share link copied to clipboard");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to get share link");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   async function handleVoid() {
     if (!confirm("Are you sure you want to void this invoice? This cannot be undone.")) return;
     setLoading("void");
@@ -123,6 +140,14 @@ export function InvoiceDetailActions({
         >
           Download PDF
         </Link>
+
+        <button
+          onClick={handleShare}
+          disabled={loading === "share"}
+          className={`${btnBase} bg-white border border-slate-200 text-slate-700 hover:bg-slate-50`}
+        >
+          {loading === "share" ? "Copying…" : "Copy Share Link"}
+        </button>
 
         {canSend && (
           <button
