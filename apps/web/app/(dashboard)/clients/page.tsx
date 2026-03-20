@@ -2,6 +2,7 @@ import { auth } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import Link from "next/link";
 import type { Metadata } from "next";
+import type { Party } from "@repo/db";
 
 export const metadata: Metadata = { title: "Clients" };
 
@@ -40,7 +41,7 @@ export default async function ClientsPage() {
               </td>
             </tr>
           ) : (
-            clients.map((c) => (
+            clients.map((c: Party) => (
               <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3">
                   <Link href={`/clients/${c.id}`} className="font-medium text-blue-600 hover:underline">
