@@ -37,31 +37,100 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const body = await req.json();
+  const businessId = session.user.businessId;
 
   const existing = await prisma.invoice.findFirst({
-    where: { id, businessId: session.user.businessId },
+    where: { id, businessId },
   });
 
   if (!existing) {
     return NextResponse.json(err("NOT_FOUND", "Invoice not found"), { status: 404 });
   }
 
-  if (existing.status === "VOID" || existing.status === "CANCELLED") {
+  if (existing.status !== "DRAFT") {
     return NextResponse.json(
-      err("INVALID_STATUS", "Cannot edit a voided or cancelled invoice"),
+      err("INVALID_STATUS", "Only draft invoices can be fully edited"),
       { status: 400 }
     );
   }
 
-  // Partial update — only update allowed fields
-  const allowed = ["notes", "terms", "dueDate", "templateId", "status"];
-  const updateData = Object.fromEntries(
-    Object.entries(body).filter(([k]) => allowed.includes(k))
-  );
+  // Full edit via createInvoiceSchema
+  const { createInvoiceSchema } = await import("../../../../../schemas/invoice.schema");
+  const { calculateLineItem, calculateInvoiceTotals } = await import("../../../../../lib/gst");
 
-  const updated = await prisma.invoice.update({
-    where: { id },
-    data: updateData,
+  const parsed = createInvoiceSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      err("VALIDATION_ERROR", "Invalid input", parsed.error.flatten()),
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+  const invoiceDate = new Date(data.invoiceDate);
+
+  const calculatedItems = data.lineItems.map((item) =>
+    calculateLineItem({
+      quantity: item.quantity,
+      rate: item.rate,
+      discountType: item.discountType,
+      discountValue: item.discountValue,
+      taxRate: item.taxRate,
+      supplyType: data.supplyType,
+    })
+  );
+  const totals = calculateInvoiceTotals(calculatedItems, data.applyRoundOff);
+
+  const updated = await prisma.$transaction(async (tx) => {
+    // Delete old line items
+    await tx.invoiceLineItem.deleteMany({ where: { invoiceId: id } });
+
+    return tx.invoice.update({
+      where: { id },
+      data: {
+        clientId: data.clientId,
+        vendorId: data.vendorId,
+        invoiceDate,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        currency: data.currency,
+        fxRate: data.fxRate,
+        supplyType: data.supplyType,
+        placeOfSupply: data.placeOfSupply,
+        notes: data.notes,
+        terms: data.terms,
+        templateId: data.templateId,
+        ...totals,
+        amountDue: totals.grandTotal,
+        lineItems: {
+          create: data.lineItems.map((item, idx) => {
+            const calc = calculatedItems[idx]!;
+            return {
+              sortOrder: item.sortOrder,
+              itemName: item.itemName,
+              description: item.description,
+              hsnSacCode: item.hsnSacCode,
+              unit: item.unit,
+              quantity: item.quantity,
+              rate: item.rate,
+              discountType: item.discountType,
+              discountValue: item.discountValue,
+              taxRate: item.taxRate,
+              cgstRate: calc.cgstRate,
+              sgstRate: calc.sgstRate,
+              igstRate: calc.igstRate,
+              cessRate: 0,
+              taxableAmount: calc.taxableAmount,
+              cgstAmount: calc.cgstAmount,
+              sgstAmount: calc.sgstAmount,
+              igstAmount: calc.igstAmount,
+              cessAmount: calc.cessAmount,
+              lineTotal: calc.lineTotal,
+            };
+          }),
+        },
+      },
+      include: { lineItems: true },
+    });
   });
 
   return NextResponse.json(ok(updated));

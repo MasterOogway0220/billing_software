@@ -123,6 +123,12 @@ export function LedgerPageClient({ grouped, groupOrder }: Props) {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href="/ledger/opening-balances"
+            className="px-4 py-2 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            Opening Balances
+          </Link>
+          <Link
             href="/ledger/journal/new"
             className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
           >

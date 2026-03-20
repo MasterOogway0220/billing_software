@@ -14,16 +14,20 @@ import { api } from "../../lib/api";
 interface Props {
   clients: { id: string; displayName: string; gstin?: string | null; billingState?: string | null; billingStateCode?: string | null }[];
   numberConfig: { prefix?: string | null; separator: string; paddingDigits: number; currentCounter: number; startingNumber: number } | null;
+  invoiceId?: string;
+  lockedInvoiceNumber?: string;
+  initialValues?: Partial<CreateInvoiceInput>;
 }
 
 const TAX_RATES = [0, 5, 12, 18, 28];
 
 const UNITS = ["pcs", "hrs", "kg", "mt", "ltr", "box", "set", "month", "year"];
 
-export function InvoiceForm({ clients, numberConfig }: Props) {
+export function InvoiceForm({ clients, numberConfig, invoiceId, lockedInvoiceNumber, initialValues }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const isEdit = !!invoiceId;
 
   const {
     register,
@@ -33,7 +37,7 @@ export function InvoiceForm({ clients, numberConfig }: Props) {
   } = useForm<CreateInvoiceInput>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createInvoiceSchema) as any,
-    defaultValues: {
+    defaultValues: initialValues ?? {
       documentType: "TAX_INVOICE",
       invoiceDate: new Date().toISOString().split("T")[0],
       currency: "INR",
@@ -91,9 +95,15 @@ export function InvoiceForm({ clients, numberConfig }: Props) {
     else setSending(true);
 
     try {
-      const res = await api.post<{ id: string }>("/api/v1/invoices", data);
-      toast.success(`Invoice ${asDraft ? "saved as draft" : "created"}`);
-      router.push(`/invoices/${res.data.id}`);
+      if (isEdit) {
+        await api.put(`/api/v1/invoices/${invoiceId}`, data);
+        toast.success("Invoice updated");
+        router.push(`/invoices/${invoiceId}`);
+      } else {
+        const res = await api.post<{ id: string }>("/api/v1/invoices", data);
+        toast.success(`Invoice ${asDraft ? "saved as draft" : "created"}`);
+        router.push(`/invoices/${res.data.id}`);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save invoice");
     } finally {
@@ -131,13 +141,21 @@ export function InvoiceForm({ clients, numberConfig }: Props) {
         <div>
           <label className="block text-xs font-medium text-slate-500 mb-1">
             Invoice Number
-            {nextNum && <span className="ml-1 text-blue-500">(next: {nextNum})</span>}
+            {!isEdit && nextNum && <span className="ml-1 text-blue-500">(next: {nextNum})</span>}
           </label>
-          <input
-            {...register("invoiceNumber")}
-            placeholder="Auto-generated if empty"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-          />
+          {isEdit ? (
+            <input
+              value={lockedInvoiceNumber ?? ""}
+              readOnly
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed"
+            />
+          ) : (
+            <input
+              {...register("invoiceNumber")}
+              placeholder="Auto-generated if empty"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            />
+          )}
         </div>
 
         <div>
@@ -373,22 +391,45 @@ export function InvoiceForm({ clients, numberConfig }: Props) {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-3 sticky bottom-6 bg-transparent">
-        <button
-          type="button"
-          onClick={handleSubmit((data) => submit(data, true))}
-          disabled={saving || sending}
-          className="px-5 py-2.5 border border-slate-300 bg-white text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-60"
-        >
-          {saving ? "Saving…" : "Save as Draft"}
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit((data) => submit(data, false))}
-          disabled={saving || sending}
-          className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-        >
-          {sending ? "Creating…" : "Create Invoice"}
-        </button>
+        {isEdit ? (
+          <>
+            <button
+              type="button"
+              onClick={() => router.push(`/invoices/${invoiceId}`)}
+              disabled={saving || sending}
+              className="px-5 py-2.5 border border-slate-300 bg-white text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit((data) => submit(data, true))}
+              disabled={saving || sending}
+              className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save Changes"}
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleSubmit((data) => submit(data, true))}
+              disabled={saving || sending}
+              className="px-5 py-2.5 border border-slate-300 bg-white text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save as Draft"}
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit((data) => submit(data, false))}
+              disabled={saving || sending}
+              className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+            >
+              {sending ? "Creating…" : "Create Invoice"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

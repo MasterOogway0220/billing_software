@@ -10,6 +10,9 @@ const updateAccountSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
   code: z.string().optional().nullable(),
   subGroup: z.string().optional().nullable(),
+  openingBalance: z.number().min(0).optional(),
+  openingBalType: z.enum(["DEBIT", "CREDIT"]).optional(),
+  openingBalDate: z.string().optional().nullable(),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -82,7 +85,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     );
   }
 
-  const { name, code, subGroup } = parsed.data;
+  const { name, code, subGroup, openingBalance, openingBalType, openingBalDate } = parsed.data;
 
   // Prevent renaming system accounts if name is being changed
   if (account.isSystem && name && name !== account.name) {
@@ -105,12 +108,17 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
   }
 
+  const { BalanceType } = await import("@repo/db");
+
   const updated = await prisma.ledgerAccount.update({
     where: { id },
     data: {
       ...(name !== undefined ? { name } : {}),
       ...(code !== undefined ? { code } : {}),
       ...(subGroup !== undefined ? { subGroup } : {}),
+      ...(openingBalance !== undefined ? { openingBalance } : {}),
+      ...(openingBalType !== undefined ? { openingBalType: openingBalType as typeof BalanceType[keyof typeof BalanceType] } : {}),
+      ...(openingBalDate !== undefined ? { openingBalDate: openingBalDate ? new Date(openingBalDate) : null } : {}),
     },
   });
 
