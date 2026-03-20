@@ -108,8 +108,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
   }
 
-  const { BalanceType } = await import("@repo/db");
-
   const updated = await prisma.ledgerAccount.update({
     where: { id },
     data: {
@@ -117,7 +115,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       ...(code !== undefined ? { code } : {}),
       ...(subGroup !== undefined ? { subGroup } : {}),
       ...(openingBalance !== undefined ? { openingBalance } : {}),
-      ...(openingBalType !== undefined ? { openingBalType: openingBalType as typeof BalanceType[keyof typeof BalanceType] } : {}),
+      ...(openingBalType !== undefined ? { openingBalType: openingBalType as "DEBIT" | "CREDIT" } : {}),
       ...(openingBalDate !== undefined ? { openingBalDate: openingBalDate ? new Date(openingBalDate) : null } : {}),
     },
   });
