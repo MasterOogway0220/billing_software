@@ -1,8 +1,12 @@
-import { auth } from "./lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "./lib/auth.config";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
-export default auth(function middleware(req: NextRequest & { auth: { user?: { businessId?: string } } | null }) {
+// Lightweight NextAuth instance for Edge Runtime — only authConfig, no bcrypt/Prisma
+const { auth } = NextAuth(authConfig);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const middleware: any = auth(function (req: any) {
   const { nextUrl } = req;
   const session = req.auth;
   const isAuthenticated = !!session;
@@ -42,6 +46,8 @@ export default auth(function middleware(req: NextRequest & { auth: { user?: { bu
 
   return NextResponse.next();
 });
+
+export default middleware;
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

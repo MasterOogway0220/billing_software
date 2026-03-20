@@ -5,22 +5,17 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { z } from "zod";
-import type { Session } from "next-auth";
+import { authConfig } from "./auth.config";
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
 
-// Assign to variable first to avoid TS "cannot be named" export inference issue
+// Full NextAuth instance — Node.js runtime only (API routes, server components)
 const nextAuth = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
-  trustHost: true,
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    newUser: "/onboarding",
-  },
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [Google({ clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET })]
