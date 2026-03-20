@@ -81,4 +81,5 @@ export const handlers: { GET: unknown; POST: unknown } = nextAuth.handlers;
 export const signIn: (...args: any[]) => Promise<void> = nextAuth.signIn as any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const signOut: (...args: any[]) => Promise<void> = nextAuth.signOut as any;
-export const auth: () => Promise<Session | null> = nextAuth.auth as unknown as () => Promise<Session | null>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const auth: any = nextAuth.auth;

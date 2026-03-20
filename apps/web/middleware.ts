@@ -1,15 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "./lib/auth";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
+export default auth(function middleware(req: NextRequest & { auth: { user?: { businessId?: string } } | null }) {
   const { nextUrl } = req;
-
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
-  const isAuthenticated = !!token;
+  const session = req.auth;
+  const isAuthenticated = !!session;
 
   const isAuthPage =
     nextUrl.pathname.startsWith("/login") ||
@@ -28,7 +24,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isAuthPage && isAuthenticated) {
-    const businessId = token?.businessId;
+    const businessId = session?.user?.businessId;
     if (!businessId) {
       return NextResponse.redirect(new URL("/onboarding", nextUrl));
     }
@@ -37,7 +33,7 @@ export async function middleware(req: NextRequest) {
 
   if (
     isAuthenticated &&
-    !token?.businessId &&
+    !session?.user?.businessId &&
     !nextUrl.pathname.startsWith("/onboarding") &&
     !nextUrl.pathname.startsWith("/api")
   ) {
@@ -45,7 +41,7 @@ export async function middleware(req: NextRequest) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
