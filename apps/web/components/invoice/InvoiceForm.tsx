@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2, ChevronDown } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { createInvoiceSchema, type CreateInvoiceInput } from "../../schemas/invoice.schema";
 import { calculateLineItem, calculateInvoiceTotals } from "../../lib/gst";
 import { formatCurrency, numberToWords } from "../../lib/utils";
@@ -30,8 +30,6 @@ export function InvoiceForm({ clients, numberConfig }: Props) {
     control,
     handleSubmit,
     watch,
-    setValue,
-    formState: { errors },
   } = useForm<CreateInvoiceInput>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createInvoiceSchema) as any,

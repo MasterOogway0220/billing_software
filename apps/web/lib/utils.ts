@@ -19,7 +19,7 @@ export function formatCurrency(
   }).format(num);
 }
 
-export function formatDate(date: Date | string, format = "dd MMM yyyy"): string {
+export function formatDate(date: Date | string, _format = "dd MMM yyyy"): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",

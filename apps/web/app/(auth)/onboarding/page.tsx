@@ -17,8 +17,8 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useForm<BusinessProfileInput>({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       resolver: zodResolver(businessProfileSchema) as any,
       defaultValues: {
         type: "COMPANY",
