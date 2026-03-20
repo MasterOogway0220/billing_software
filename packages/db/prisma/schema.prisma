@@ -1,0 +1,596 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// AUTH & USERS (NextAuth.js v5 compatible)
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      OAuthAccount[]
+  sessions      Session[]
+  memberships   BusinessMember[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model OAuthAccount {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("oauth_accounts")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────────
+// BUSINESS (MULTI-TENANT)
+// ─────────────────────────────────────────────
+
+model Business {
+  id                 String       @id @default(cuid())
+  name               String
+  legalName          String?
+  type               BusinessType @default(COMPANY)
+  gstin              String?
+  pan                String?
+  logoUrl            String?
+  phone              String?
+  email              String?
+  website            String?
+  financialYearStart Month        @default(APRIL)
+  defaultCurrency    String       @default("INR")
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  state              String?
+  stateCode          String?
+  pincode            String?
+  country            String       @default("India")
+  bankName           String?
+  bankAccount        String?
+  bankIfsc           String?
+  bankBranch         String?
+  upiId              String?
+  signatureUrl       String?
+  invoiceFooter      String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  members            BusinessMember[]
+  parties            Party[]
+  invoices           Invoice[]
+  payments           Payment[]
+  ledgerAccounts     LedgerAccount[]
+  ledgerEntries      LedgerEntry[]
+  journalEntries     JournalEntry[]
+  numberConfigs      InvoiceNumberConfig[]
+  itemMasters        ItemMaster[]
+  taxRates           TaxRate[]
+  auditLogs          AuditLog[]
+
+  @@map("businesses")
+}
+
+model BusinessMember {
+  id         String     @id @default(cuid())
+  businessId String
+  userId     String
+  role       MemberRole @default(VIEWER)
+  invitedAt  DateTime   @default(now())
+  joinedAt   DateTime?
+  isActive   Boolean    @default(true)
+
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, userId])
+  @@map("business_members")
+}
+
+// ─────────────────────────────────────────────
+// CLIENTS & VENDORS
+// ─────────────────────────────────────────────
+
+model Party {
+  id                   String    @id @default(cuid())
+  businessId           String
+  type                 PartyType @default(CLIENT)
+  displayName          String
+  legalName            String?
+  gstin                String?
+  pan                  String?
+  contactName          String?
+  contactEmail         String?
+  contactPhone         String?
+  billingAddressLine1  String?
+  billingAddressLine2  String?
+  billingCity          String?
+  billingState         String?
+  billingStateCode     String?
+  billingPincode       String?
+  billingCountry       String    @default("India")
+  shippingAddressLine1 String?
+  shippingAddressLine2 String?
+  shippingCity         String?
+  shippingState        String?
+  shippingPincode      String?
+  defaultPaymentTerms  Int?      @default(30)
+  defaultCurrency      String    @default("INR")
+  notes                String?
+  isActive             Boolean   @default(true)
+  portalEnabled        Boolean   @default(false)
+  portalEmail          String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  business             Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoicesAsClient     Invoice[] @relation("ClientInvoices")
+  invoicesAsVendor     Invoice[] @relation("VendorInvoices")
+  payments             Payment[]
+  ledgerEntries        LedgerEntry[]
+
+  @@index([businessId, type])
+  @@index([businessId, displayName])
+  @@map("parties")
+}
+
+// ─────────────────────────────────────────────
+// INVOICE NUMBER CONFIG
+// ─────────────────────────────────────────────
+
+model InvoiceNumberConfig {
+  id             String       @id @default(cuid())
+  businessId     String
+  documentType   DocumentType
+  prefix         String?
+  includeFY      Boolean      @default(false)
+  fyFormat       String?      @default("YYYY-YY")
+  includeMonth   Boolean      @default(false)
+  monthFormat    MonthFormat  @default(SHORT)
+  separator      String       @default("-")
+  paddingDigits  Int          @default(4)
+  currentCounter Int          @default(0)
+  startingNumber Int          @default(1)
+  suffix         String?
+  resetFrequency ResetFreq    @default(FINANCIAL_YEAR)
+  lastResetDate  DateTime?
+  updatedAt      DateTime     @updatedAt
+
+  business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, documentType])
+  @@map("invoice_number_configs")
+}
+
+// ─────────────────────────────────────────────
+// INVOICE
+// ─────────────────────────────────────────────
+
+model Invoice {
+  id              String        @id @default(cuid())
+  businessId      String
+  documentType    DocumentType  @default(TAX_INVOICE)
+  invoiceNumber   String
+  status          InvoiceStatus @default(DRAFT)
+  clientId        String?
+  vendorId        String?
+  invoiceDate     DateTime
+  dueDate         DateTime?
+  currency        String        @default("INR")
+  fxRate          Decimal       @default(1) @db.Decimal(15, 6)
+  subtotal        Decimal       @default(0) @db.Decimal(15, 2)
+  totalDiscount   Decimal       @default(0) @db.Decimal(15, 2)
+  totalTaxable    Decimal       @default(0) @db.Decimal(15, 2)
+  totalCGST       Decimal       @default(0) @db.Decimal(15, 2)
+  totalSGST       Decimal       @default(0) @db.Decimal(15, 2)
+  totalIGST       Decimal       @default(0) @db.Decimal(15, 2)
+  totalCess       Decimal       @default(0) @db.Decimal(15, 2)
+  roundOff        Decimal       @default(0) @db.Decimal(5, 2)
+  grandTotal      Decimal       @default(0) @db.Decimal(15, 2)
+  amountPaid      Decimal       @default(0) @db.Decimal(15, 2)
+  amountDue       Decimal       @default(0) @db.Decimal(15, 2)
+  supplyType      SupplyType    @default(INTRA_STATE)
+  placeOfSupply   String?
+  notes           String?
+  terms           String?
+  templateId      String?
+  pdfUrl          String?
+  shareToken      String?       @unique @default(cuid())
+  isRecurring     Boolean       @default(false)
+  recurringConfig Json?
+  parentInvoiceId String?
+  convertedFromId String?
+  shippingAddress Json?
+  createdById     String?
+  sentAt          DateTime?
+  paidAt          DateTime?
+  voidedAt        DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client          Party?        @relation("ClientInvoices", fields: [clientId], references: [id])
+  vendor          Party?        @relation("VendorInvoices", fields: [vendorId], references: [id])
+  lineItems       InvoiceLineItem[]
+  payments        Payment[]
+  ledgerEntries   LedgerEntry[]
+  auditLogs       AuditLog[]
+
+  @@unique([businessId, documentType, invoiceNumber])
+  @@index([businessId, status])
+  @@index([businessId, invoiceDate])
+  @@index([clientId])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id            String       @id @default(cuid())
+  invoiceId     String
+  sortOrder     Int          @default(0)
+  itemName      String
+  description   String?
+  hsnSacCode    String?
+  unit          String       @default("pcs")
+  quantity      Decimal      @db.Decimal(15, 4)
+  rate          Decimal      @db.Decimal(15, 4)
+  discountType  DiscountType @default(PERCENT)
+  discountValue Decimal      @default(0) @db.Decimal(10, 4)
+  taxRate       Decimal      @default(18) @db.Decimal(5, 2)
+  cgstRate      Decimal      @default(0) @db.Decimal(5, 2)
+  sgstRate      Decimal      @default(0) @db.Decimal(5, 2)
+  igstRate      Decimal      @default(0) @db.Decimal(5, 2)
+  cessRate      Decimal      @default(0) @db.Decimal(5, 2)
+  taxableAmount Decimal      @db.Decimal(15, 2)
+  cgstAmount    Decimal      @default(0) @db.Decimal(15, 2)
+  sgstAmount    Decimal      @default(0) @db.Decimal(15, 2)
+  igstAmount    Decimal      @default(0) @db.Decimal(15, 2)
+  cessAmount    Decimal      @default(0) @db.Decimal(15, 2)
+  lineTotal     Decimal      @db.Decimal(15, 2)
+
+  invoice       Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_line_items")
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+
+model Payment {
+  id          String      @id @default(cuid())
+  businessId  String
+  invoiceId   String?
+  partyId     String?
+  paymentDate DateTime
+  amount      Decimal     @db.Decimal(15, 2)
+  currency    String      @default("INR")
+  mode        PaymentMode @default(BANK_TRANSFER)
+  referenceNo String?
+  chequeNo    String?
+  chequeDate  DateTime?
+  notes       String?
+  receiptUrl  String?
+  tdsAmount   Decimal     @default(0) @db.Decimal(15, 2)
+  tdsSection  String?
+  createdAt   DateTime    @default(now())
+
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoice       Invoice?      @relation(fields: [invoiceId], references: [id])
+  party         Party?        @relation(fields: [partyId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@index([businessId, invoiceId])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// LEDGER
+// ─────────────────────────────────────────────
+
+model LedgerAccount {
+  id              String       @id @default(cuid())
+  businessId      String
+  code            String?
+  name            String
+  group           AccountGroup
+  subGroup        String?
+  isSystem        Boolean      @default(false)
+  isActive        Boolean      @default(true)
+  openingBalance  Decimal      @default(0) @db.Decimal(15, 2)
+  openingBalType  BalanceType  @default(DEBIT)
+  openingBalDate  DateTime?
+
+  business        Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  entries         LedgerEntry[]
+
+  @@unique([businessId, name])
+  @@map("ledger_accounts")
+}
+
+model LedgerEntry {
+  id           String        @id @default(cuid())
+  businessId   String
+  accountId    String
+  entryDate    DateTime
+  voucherType  VoucherType
+  voucherId    String?
+  voucherNo    String?
+  narration    String?
+  debit        Decimal       @default(0) @db.Decimal(15, 2)
+  credit       Decimal       @default(0) @db.Decimal(15, 2)
+  partyId      String?
+  invoiceId    String?
+  paymentId    String?
+  journalId    String?
+  isReconciled Boolean       @default(false)
+  reconciledAt DateTime?
+  createdAt    DateTime      @default(now())
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  account      LedgerAccount @relation(fields: [accountId], references: [id])
+  party        Party?        @relation(fields: [partyId], references: [id])
+  invoice      Invoice?      @relation(fields: [invoiceId], references: [id])
+  payment      Payment?      @relation(fields: [paymentId], references: [id])
+  journal      JournalEntry? @relation(fields: [journalId], references: [id])
+
+  @@index([businessId, accountId, entryDate])
+  @@index([businessId, voucherType, entryDate])
+  @@index([partyId])
+  @@map("ledger_entries")
+}
+
+model JournalEntry {
+  id            String        @id @default(cuid())
+  businessId    String
+  voucherNo     String?
+  entryDate     DateTime
+  narration     String
+  attachments   Json?
+  createdById   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  lines         JournalLine[]
+  ledgerEntries LedgerEntry[]
+
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id        String       @id @default(cuid())
+  journalId String
+  accountId String
+  narration String?
+  debit     Decimal      @default(0) @db.Decimal(15, 2)
+  credit    Decimal      @default(0) @db.Decimal(15, 2)
+
+  journal   JournalEntry @relation(fields: [journalId], references: [id], onDelete: Cascade)
+
+  @@map("journal_lines")
+}
+
+// ─────────────────────────────────────────────
+// ITEM MASTER & TAX RATES
+// ─────────────────────────────────────────────
+
+model ItemMaster {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  hsnSacCode  String?
+  unit        String   @default("pcs")
+  defaultRate Decimal  @db.Decimal(15, 4)
+  defaultTax  Decimal  @default(18) @db.Decimal(5, 2)
+  isService   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("item_masters")
+}
+
+model TaxRate {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  rate       Decimal  @db.Decimal(5, 2)
+  cgst       Decimal  @db.Decimal(5, 2)
+  sgst       Decimal  @db.Decimal(5, 2)
+  igst       Decimal  @db.Decimal(5, 2)
+  cess       Decimal  @default(0) @db.Decimal(5, 2)
+  isDefault  Boolean  @default(false)
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("tax_rates")
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  businessId String
+  userId     String?
+  entityType String
+  entityId   String
+  invoiceId  String?
+  action     String
+  diff       Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User?     @relation(fields: [userId], references: [id])
+  invoice    Invoice?  @relation(fields: [invoiceId], references: [id])
+
+  @@index([businessId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum BusinessType {
+  INDIVIDUAL
+  PROPRIETORSHIP
+  PARTNERSHIP
+  LLP
+  COMPANY
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  ACCOUNTANT
+  VIEWER
+}
+
+enum PartyType {
+  CLIENT
+  VENDOR
+  BOTH
+}
+
+enum Month {
+  JANUARY
+  FEBRUARY
+  MARCH
+  APRIL
+  MAY
+  JUNE
+  JULY
+  AUGUST
+  SEPTEMBER
+  OCTOBER
+  NOVEMBER
+  DECEMBER
+}
+
+enum MonthFormat {
+  SHORT
+  NUMERIC
+}
+
+enum ResetFreq {
+  NEVER
+  FINANCIAL_YEAR
+  CALENDAR_YEAR
+  MONTHLY
+}
+
+enum DiscountType {
+  PERCENT
+  FLAT
+}
+
+enum SupplyType {
+  INTRA_STATE
+  INTER_STATE
+  EXPORT
+}
+
+enum PaymentMode {
+  CASH
+  BANK_TRANSFER
+  UPI
+  CHEQUE
+  CREDIT_CARD
+  DEBIT_CARD
+  ONLINE
+}
+
+enum AccountGroup {
+  ASSETS
+  LIABILITIES
+  INCOME
+  EXPENSES
+  EQUITY
+}
+
+enum BalanceType {
+  DEBIT
+  CREDIT
+}
+
+enum VoucherType {
+  INVOICE
+  PAYMENT
+  JOURNAL
+  CONTRA
+  CREDIT_NOTE
+  DEBIT_NOTE
+  OPENING_BALANCE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+  VOID
+}
+
+enum DocumentType {
+  TAX_INVOICE
+  PROFORMA
+  QUOTATION
+  CREDIT_NOTE
+  DEBIT_NOTE
+  PURCHASE_ORDER
+  DELIVERY_CHALLAN
+  PAYMENT_RECEIPT
+}
