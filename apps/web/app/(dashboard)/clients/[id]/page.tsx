@@ -260,7 +260,7 @@ export default async function ClientDetailPage({
       </div>
 
       {/* Tabs */}
-      <ClientDetailTabs invoicesTab={invoicesTab} detailsTab={detailsTab} />
+      <ClientDetailTabs invoicesTab={invoicesTab} detailsTab={detailsTab} clientId={p.id} />
     </div>
   );
 }
