@@ -62,14 +62,7 @@ export async function GET(req: NextRequest) {
 
       // Sum all entries before the current page
       if (page > 1) {
-        const prevSums = await prisma.ledgerEntry.aggregate({
-          where: {
-            ...where,
-          },
-          _sum: { debit: true, credit: true },
-        });
-        // We only want entries before current page — compute from all then subtract current page
-        // Simpler: compute the sum of the first (skip) entries
+        // Compute the sum of the first (skip) entries to seed running balance
         const prevEntries = await prisma.ledgerEntry.findMany({
           where,
           orderBy: [{ entryDate: "asc" }, { createdAt: "asc" }],

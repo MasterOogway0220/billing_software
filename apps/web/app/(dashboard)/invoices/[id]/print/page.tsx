@@ -5,6 +5,7 @@ import { prisma } from "../../../../../lib/prisma";
 import { formatCurrency, formatDate, numberToWords } from "../../../../../lib/utils";
 import { redirect } from "next/navigation";
 import type { Invoice, InvoiceLineItem, Party, Payment, Business } from "@repo/db";
+import PrintButton from "./PrintButton";
 
 const DOC_TYPE_LABELS: Record<string, string> = {
   TAX_INVOICE: "TAX INVOICE",
@@ -107,13 +108,7 @@ export default async function InvoicePrintPage({
         `}</style>
       </head>
       <body>
-        <button
-          className="print-btn"
-          onClick={() => window.print()}
-          suppressHydrationWarning
-        >
-          Print / Save PDF
-        </button>
+        <PrintButton />
 
         <div className="page">
           {/* Header: Business info + doc type */}
@@ -554,15 +549,6 @@ export default async function InvoicePrintPage({
           </div>
         </div>
 
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              document.querySelector('.print-btn').addEventListener('click', function() {
-                window.print();
-              });
-            `,
-          }}
-        />
       </body>
     </html>
   );

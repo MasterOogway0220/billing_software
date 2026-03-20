@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { formatCurrency } from "../../lib/utils";
 
-type PaymentMode = "BANK_TRANSFER" | "CASH" | "CHEQUE" | "UPI" | "CARD" | "OTHER";
+type PaymentMode = "BANK_TRANSFER" | "CASH" | "CHEQUE" | "UPI" | "CREDIT_CARD" | "DEBIT_CARD" | "ONLINE";
 
 interface RecordPaymentFormData {
   amount: number;
@@ -26,8 +26,9 @@ const MODE_OPTIONS: { value: PaymentMode; label: string }[] = [
   { value: "CASH", label: "Cash" },
   { value: "CHEQUE", label: "Cheque" },
   { value: "UPI", label: "UPI" },
-  { value: "CARD", label: "Card" },
-  { value: "OTHER", label: "Other" },
+  { value: "CREDIT_CARD", label: "Credit Card" },
+  { value: "DEBIT_CARD", label: "Debit Card" },
+  { value: "ONLINE", label: "Online" },
 ];
 
 function todayISO(): string {
